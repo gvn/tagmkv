@@ -6,6 +6,7 @@ var program = require('commander');
 var inquirer = require('inquirer');
 var Handlebars = require('handlebars');
 var shell = require('shelljs');
+var chalk = require('chalk');
 
 var MovieDB = require('moviedb')(
   fs.readFileSync(
@@ -35,7 +36,7 @@ const MKV = program.args[0];
 var query = MKV.match(/(.*)\.(?:mkv|MKV)/);
 
 if (!query) {
-  console.error(`File extension must be ".mkv" or ".MKV".`);
+  console.error(chalk.red(`File extension must be ".mkv" or ".MKV".`));
   process.exit(1);
 } else {
   query = query[1];
@@ -43,7 +44,7 @@ if (!query) {
 
 MovieDB.searchMovie({query: query}, (err, res) => {
   if (err) {
-    console.error(err);
+    console.error(chalk.red(err));
     process.exit(1);
   }
 
@@ -51,17 +52,20 @@ MovieDB.searchMovie({query: query}, (err, res) => {
   // TODO : Deal with 1 result
 
   if (!res.results.length) {
-    console.error('No results for specified movie.');
+    console.error(chalk.red('No results for specified movie.'));
      process.exit(1);
   }
+
+  console.log(res.results);
 
   var movieChoices = res.results.map((result) => {
     return {
       id: result.id,
       title: result.title,
-      releaseDate: result.release_date
+      releaseDate: result.release_date,
+      releaseYear: result.release_date.split('-')[0] ? result.release_date.split('-')[0] : undefined
     };
-  })
+  });
 
   // Prompt for the specific movie if there are many results and grab its unique ID
   var question = [
@@ -71,7 +75,7 @@ MovieDB.searchMovie({query: query}, (err, res) => {
       message: `Which movie did you want?`,
       choices: movieChoices.map((movie) => {
         return {
-          name: movie.title,
+          name: `${chalk.bold(movie.title)} – ${movie.releaseYear ? movie.releaseYear : '?'}`,
           value: movie.id
         }
       })
@@ -81,7 +85,7 @@ MovieDB.searchMovie({query: query}, (err, res) => {
   inquirer.prompt(question, (answer) => {
     MovieDB.movieInfo({id: answer.movieID}, (err, res) => {
       if (err) {
-        console.error(err);
+        console.error(chalk.red(err));
         process.exit(1);
       }
 
@@ -91,7 +95,7 @@ MovieDB.searchMovie({query: query}, (err, res) => {
       shell.exec(`mkvpropedit '${MKV}' --tags all:tags.xml`);
       shell.rm(`tags.xml`);
 
-      console.log(`File successfully tagged!`);
+      console.log(chalk.green(`File successfully tagged!`));
       process.exit();
     })
   });
