@@ -56,8 +56,6 @@ MovieDB.searchMovie({query: query}, (err, res) => {
      process.exit(1);
   }
 
-  console.log(res.results);
-
   var movieChoices = res.results.map((result) => {
     return {
       id: result.id,
