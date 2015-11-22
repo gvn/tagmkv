@@ -33,7 +33,7 @@ if (!program.args.length) {
 
 const MKV = program.args[0];
 
-var query = MKV.match(/(.*)\.(?:mkv|MKV)/);
+var query = MKV.match(/([^\n\//]+)\.(?:mkv|MKV)$/);
 
 if (!query) {
   console.error(chalk.red(`File extension must be ".mkv" or ".MKV".`));
@@ -52,7 +52,7 @@ MovieDB.searchMovie({query: query}, (err, res) => {
   // TODO : Deal with 1 result
 
   if (!res.results.length) {
-    console.error(chalk.red('No results for specified movie.'));
+    console.error(chalk.red(`No results found for "${query}".`));
      process.exit(1);
   }
 
