@@ -25,7 +25,7 @@ var template = Handlebars.compile(
 program
   .version('1.0.0')
   .usage('mkv-file')
-  .option('-r, --rename', 'rename target file with canonical title')
+  .option('-r, --rename', 'rename target file with canonical title and release year')
   .parse(process.argv);
 
 if (!program.args.length) {
