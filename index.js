@@ -25,6 +25,7 @@ var template = Handlebars.compile(
 program
   .version('1.0.0')
   .usage('mkv-file')
+  .option('-r, --rename', 'rename target file with canonical title')
   .parse(process.argv);
 
 if (!program.args.length) {
@@ -33,13 +34,22 @@ if (!program.args.length) {
 
 const MKV = program.args[0];
 
-var query = MKV.match(/([^\n\//]+)\.(?:mkv|MKV)$/);
+var titleFragment = /([^\n\//]+)\.(?:mkv|MKV)$/;
+var query = MKV.match(titleFragment);
 
 if (!query) {
   console.error(chalk.red(`File extension must be ".mkv" or ".MKV".`));
   process.exit(1);
 } else {
   query = query[1];
+}
+
+function extractYear(releaseDate) {
+  if (typeof releaseDate === 'string') {
+    return releaseDate.split('-')[0] ? releaseDate.split('-')[0] : undefined
+  } else {
+    return undefined;
+  }
 }
 
 function searchMovie(movie) {
@@ -61,7 +71,7 @@ function searchMovie(movie) {
           id: result.id,
           title: result.title,
           releaseDate: result.release_date,
-          releaseYear: result.release_date.split('-')[0] ? result.release_date.split('-')[0] : undefined
+          releaseYear: extractYear(result.release_date)
         };
       }));
     })
@@ -119,6 +129,16 @@ searchMovie(query).then(function (response) {
   // Remove tags XML
   shell.rm(`tags.xml`);
 
-  console.log(chalk.green(`File successfully tagged!`));
+  if (program.rename) {
+    // Using iterim file due to shell.js `mv` lacking case sensitivity
+    // eg: `snow crash.mkv` won't rename to `Snow Crash.mkv`
+    var temp = `${MKV.replace(titleFragment, "TEMPORARY_TITLE")}.mkv`;
+
+    shell.mv(MKV, temp);
+    shell.mv(temp, temp.replace("TEMPORARY_TITLE", `${response.title} (${extractYear(response.release_date)})`));
+  }
+
+  console.log(chalk.green(`✓ File successfully tagged!`));
+
   process.exit();
 });

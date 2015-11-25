@@ -20,6 +20,7 @@ Options:
 
   -h, --help     output usage information
   -V, --version  output the version number
+  -r, --rename   rename target file with canonical title
 ```
 
 ## Tags
