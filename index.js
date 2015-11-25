@@ -42,64 +42,83 @@ if (!query) {
   query = query[1];
 }
 
-MovieDB.searchMovie({query: query}, (err, res) => {
-  if (err) {
-    console.error(chalk.red(err));
-    process.exit(1);
-  }
-
-  // TODO : Deal with multiple pages of results
-  // TODO : Deal with 1 result
-
-  if (!res.results.length) {
-    console.error(chalk.red(`No results found for "${query}".`));
-     process.exit(1);
-  }
-
-  var movieChoices = res.results.map((result) => {
-    return {
-      id: result.id,
-      title: result.title,
-      releaseDate: result.release_date,
-      releaseYear: result.release_date.split('-')[0] ? result.release_date.split('-')[0] : undefined
-    };
-  });
-
-  // Prompt for the specific movie if there are many results and grab its unique ID
-  var question = [
-    {
-      type: `list`,
-      name: `movieID`,
-      message: `Which movie did you want?`,
-      choices: movieChoices.map((movie) => {
-        return {
-          name: `${chalk.bold(movie.title)} – ${movie.releaseYear ? movie.releaseYear : '?'}`,
-          value: movie.id
-        }
-      })
-    }
-  ];
-
-  inquirer.prompt(question, (answer) => {
-    MovieDB.movieInfo({id: answer.movieID}, (err, res) => {
+function searchMovie(movie) {
+  return new Promise(function (resolve, reject) {
+    MovieDB.searchMovie({query: movie}, (err, res) => {
       if (err) {
-        console.error(chalk.red(err));
-        process.exit(1);
+        reject(err);
       }
 
-      fs.writeFileSync(`tags.xml`, template(res));
+      // TODO : Deal with multiple pages of results
+      // TODO : Deal with 1 result
 
-      // Add main title to file
-      shell.exec(`mkvpropedit --set title="${res.title}" "${MKV}"`);
+      if (!res.results.length) {
+        reject(`No results found for "${movie}".`);
+      }
 
-      // Merge tags into file
-      shell.exec(`mkvpropedit "${MKV}" --tags all:tags.xml`);
-
-      // Remove tags XML
-      shell.rm(`tags.xml`);
-
-      console.log(chalk.green(`File successfully tagged!`));
-      process.exit();
+      resolve(res.results.map((result) => {
+        return {
+          id: result.id,
+          title: result.title,
+          releaseDate: result.release_date,
+          releaseYear: result.release_date.split('-')[0] ? result.release_date.split('-')[0] : undefined
+        };
+      }));
     })
+  })
+}
+
+function askForMovie(movies) {
+  return new Promise(function (resolve, reject) {
+    // Prompt for the specific movie if there are many results and grab its unique ID
+    var question = [
+      {
+        type: `list`,
+        name: `movieID`,
+        message: `Which movie did you want?`,
+        choices: movies.map((movie) => {
+          return {
+            name: `${chalk.bold(movie.title)} – ${movie.releaseYear ? movie.releaseYear : '?'}`,
+            value: movie.id
+          }
+        })
+      }
+    ];
+
+    var title = inquirer.prompt(question, function (answer) {
+      resolve(answer);
+    });
+  })
+}
+
+function getMovieDetails(movie) {
+  return new Promise(function (resolve, reject) {
+    MovieDB.movieInfo({id: movie.movieID}, (err, res) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(res);
+      }
+    });
   });
+}
+
+searchMovie(query).then(function (response) {
+  return askForMovie(response);
+}).then(function (response) {
+  return getMovieDetails(response);
+}).catch(function (error) {
+  console.error(chalk.red(error));
+  process.exit(1);
+}).then(function (response) {
+  fs.writeFileSync(`tags.xml`, template(response));
+
+  // Add main title to file and merge tags into file
+  shell.exec(`mkvpropedit "${MKV}" --tags all:tags.xml --set title="${response.title}"`);
+
+  // Remove tags XML
+  shell.rm(`tags.xml`);
+
+  console.log(chalk.green(`File successfully tagged!`));
+  process.exit();
 });
