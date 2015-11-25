@@ -89,8 +89,13 @@ MovieDB.searchMovie({query: query}, (err, res) => {
 
       fs.writeFileSync(`tags.xml`, template(res));
 
+      // Add main title to file
+      shell.exec(`mkvpropedit --set title="${res.title}" "${MKV}"`);
+
       // Merge tags into file
-      shell.exec(`mkvpropedit '${MKV}' --tags all:tags.xml`);
+      shell.exec(`mkvpropedit "${MKV}" --tags all:tags.xml`);
+
+      // Remove tags XML
       shell.rm(`tags.xml`);
 
       console.log(chalk.green(`File successfully tagged!`));
