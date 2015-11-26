@@ -46,7 +46,7 @@ if (!query) {
 
 function extractYear(releaseDate) {
   if (typeof releaseDate === 'string') {
-    return releaseDate.split('-')[0] ? releaseDate.split('-')[0] : undefined
+    return releaseDate.split('-')[0] ? releaseDate.split('-')[0] : undefined;
   } else {
     return undefined;
   }
@@ -74,8 +74,8 @@ function searchMovie(movie) {
           releaseYear: extractYear(result.release_date)
         };
       }));
-    })
-  })
+    });
+  });
 }
 
 function askForMovie(movies) {
@@ -88,9 +88,9 @@ function askForMovie(movies) {
         message: `Which movie did you want?`,
         choices: movies.map((movie) => {
           return {
-            name: `${chalk.bold(movie.title)} – ${movie.releaseYear ? movie.releaseYear : '?'}`,
+            name: `${chalk.bold(movie.title)} – ${movie.releaseYear ? movie.releaseYear : '?'}`,
             value: movie.id
-          }
+          };
         })
       }
     ];
@@ -98,7 +98,7 @@ function askForMovie(movies) {
     var title = inquirer.prompt(question, function (answer) {
       resolve(answer);
     });
-  })
+  });
 }
 
 function getMovieDetails(movie) {
