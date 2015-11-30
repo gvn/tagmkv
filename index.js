@@ -44,6 +44,11 @@ if (!query) {
   query = query[1];
 }
 
+/**
+ * Extract the year from a date string
+ * @param  {string} releaseDate Date string eg: 2014-12-01
+ * @return {number}             Year
+ */
 function extractYear(releaseDate) {
   if (typeof releaseDate === 'string') {
     return releaseDate.split('-')[0] ? releaseDate.split('-')[0] : undefined;
@@ -52,6 +57,11 @@ function extractYear(releaseDate) {
   }
 }
 
+/**
+ * Perform a search for specified movie
+ * @param  {string} movie
+ * @return {object}       Promise that returns a list of movies on completion
+ */
 function searchMovie(movie) {
   return new Promise(function (resolve, reject) {
     MovieDB.searchMovie({query: movie}, (err, res) => {
@@ -78,6 +88,11 @@ function searchMovie(movie) {
   });
 }
 
+/**
+ * Prompt user to select a movie from a list
+ * @param  {array} movies
+ * @return {object}        Promise that returns chosen movie data
+ */
 function askForMovie(movies) {
   return new Promise(function (resolve, reject) {
     // Prompt for the specific movie if there are many results and grab its unique ID
@@ -101,6 +116,11 @@ function askForMovie(movies) {
   });
 }
 
+/**
+ * Get basic movie details
+ * @param  {string} movie Unique identifier for movie
+ * @return {object}       Promise with movie details on resolution
+ */
 function getMovieDetails(movie) {
   return new Promise(function (resolve, reject) {
     MovieDB.movieInfo({id: movie.movieID}, (err, res) => {
