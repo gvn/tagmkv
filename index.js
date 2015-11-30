@@ -118,7 +118,7 @@ function askForMovie(movies) {
 
 /**
  * Get basic movie details
- * @param  {string} movie Unique identifier for movie
+ * @param  {object} movie
  * @return {object}       Promise with movie details on resolution
  */
 function getMovieDetails(movie) {
@@ -133,18 +133,54 @@ function getMovieDetails(movie) {
   });
 }
 
+/**
+ * Get addtional metadata for a movie
+ * @param  {string} movie Unique ID for movie
+ * @return {object}       Promise with extended metadata
+ */
+function getMovieCredits(movie) {
+  return new Promise(function (resolve, reject) {
+    MovieDB.movieCredits({id: movie}, (err, res) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(res);
+      }
+    });
+  });
+}
+
+var movieData = {};
+
 searchMovie(query).then(function (response) {
   return askForMovie(response);
 }).then(function (response) {
   return getMovieDetails(response);
+}).then(function (response) {
+  Object.assign(movieData, response);
+  return getMovieCredits(response.id);
 }).catch(function (error) {
   console.error(chalk.red(error));
   process.exit(1);
 }).then(function (response) {
-  fs.writeFileSync(`tags.xml`, template(response));
+  Object.assign(movieData, response);
+
+  movieData.keyedCrew = {};
+
+  // Make it easy to access crew by using roles as keys
+  movieData.crew.forEach((member) => {
+    var job = member.job.replace(/ /g, '');
+    if (!movieData.keyedCrew[job]) {
+      movieData.keyedCrew[job] = member.name;
+    } else {
+      movieData.keyedCrew[job] = `${movieData.keyedCrew[job]}, ${member.name}`;
+    }
+  });
+
+  fs.writeFileSync(`tags.xml`, template(movieData));
 
   // Add main title to file and merge tags into file
-  shell.exec(`mkvpropedit "${MKV}" --tags all:tags.xml --set title="${response.title}"`);
+  shell.exec(`mkvpropedit "${MKV}" --tags all:tags.xml --set title="${movieData.title}"`);
 
   // Remove tags XML
   shell.rm(`tags.xml`);
@@ -155,7 +191,7 @@ searchMovie(query).then(function (response) {
     var temp = `${MKV.replace(titleFragment, "TEMPORARY_TITLE")}.mkv`;
 
     shell.mv(MKV, temp);
-    shell.mv(temp, temp.replace("TEMPORARY_TITLE", `${response.title} (${extractYear(response.release_date)})`));
+    shell.mv(temp, temp.replace("TEMPORARY_TITLE", `${movieData.title} (${extractYear(movieData.release_date)})`));
   }
 
   console.log(chalk.green(`✓ File successfully tagged!`));
