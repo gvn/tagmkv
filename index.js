@@ -44,6 +44,9 @@ if (!query) {
   query = query[1];
 }
 
+query = query.replace(/\./g, ` `); // Replace dots with spaces
+query = query.replace(/\d\d\d\d.*/, ``); // Remove year and everything after it
+
 /**
  * Extract the year from a date string
  * @param  {string} releaseDate Date string eg: 2014-12-01
@@ -153,7 +156,13 @@ function getMovieCredits(movie) {
 var movieData = {};
 
 searchMovie(query).then(function (response) {
-  return askForMovie(response);
+  // If there's only 1 match, assume it's correct. Otherwise, ask.
+  if (response.length === 1) {
+    console.log(`Assuming: ${response[0].title} (${response[0].releaseYear})`);
+    return Promise.resolve({movieID: response[0].id});
+  } else {
+    return askForMovie(response);
+  }
 }).then(function (response) {
   return getMovieDetails(response);
 }).then(function (response) {
