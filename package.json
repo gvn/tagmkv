@@ -15,7 +15,7 @@
   "dependencies": {
     "chalk": "1.1.1",
     "commander": "2.9.0",
-    "handlebars": "4.0.5",
+    "handlebars": "4.0.10",
     "inquirer": "0.11.0",
     "moviedb": "0.2.2",
     "shelljs": "0.5.3"
